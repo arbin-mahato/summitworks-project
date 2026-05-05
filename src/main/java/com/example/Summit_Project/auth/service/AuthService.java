@@ -29,11 +29,11 @@ public class AuthService {
     }
 
     public AuthResponse authenticate(AuthRequest request) {
-        AppUser appUser = appUserRepository.findByUsername(request.username())
-                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+        AppUser appUser = appUserRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.password(), appUser.getPasswordHash())) {
-            throw new BadCredentialsException("Invalid username or password");
+            throw new BadCredentialsException("Invalid email or password");
         }
 
         String token = jwtService.generateToken(appUser);
@@ -41,12 +41,13 @@ public class AuthService {
     }
 
     public AuthResponse signup(SignupRequest request) {
-        if (appUserRepository.existsByUsername(request.username())) {
-            throw new UserAlreadyExistsException("Username is already registered");
+        if (appUserRepository.existsByEmail(request.email())) {
+            throw new UserAlreadyExistsException("Email is already registered");
         }
 
         AppUser appUser = new AppUser();
-        appUser.setUsername(request.username());
+        appUser.setFullName(request.fullName());
+        appUser.setEmail(request.email());
         appUser.setPasswordHash(passwordEncoder.encode(request.password()));
         appUser.setRole(Role.USER);
 
@@ -55,15 +56,15 @@ public class AuthService {
         return new AuthResponse(token, "Bearer", jwtService.getExpiryTime(), savedUser.getRole());
     }
 
-    public UserRoleResponse assignRole(String username, RoleAssignmentRequest request) {
-        AppUser appUser = appUserRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+    public UserRoleResponse assignRole(String email, RoleAssignmentRequest request) {
+        AppUser appUser = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + email));
 
         appUser.setRole(request.role());
         appUserRepository.save(appUser);
 
         return new UserRoleResponse(
-                appUser.getUsername(),
+                appUser.getEmail(),
                 appUser.getRole(),
                 "Role updated successfully. The user must log in again to receive a token with the new role."
         );

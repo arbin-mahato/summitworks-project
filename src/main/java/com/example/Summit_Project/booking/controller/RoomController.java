@@ -25,11 +25,14 @@ public class RoomController {
     }
 
     @GetMapping("/hotels/{hotelId}/rooms")
-    public ResponseEntity<List<RoomSummaryResponse>> getAvailableRooms(
+    public ResponseEntity<List<RoomSummaryResponse>> getRoomsByHotel(
             @PathVariable Long hotelId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate
     ) {
+        if (checkInDate == null && checkOutDate == null) {
+            return ResponseEntity.ok(roomService.getRoomsByHotel(hotelId));
+        }
         return ResponseEntity.ok(roomService.getAvailableRoomsByHotel(hotelId, checkInDate, checkOutDate));
     }
 

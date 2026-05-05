@@ -10,6 +10,7 @@ import com.example.Summit_Project.booking.entity.Booking;
 import com.example.Summit_Project.booking.entity.BookingStatus;
 import com.example.Summit_Project.booking.entity.Room;
 import com.example.Summit_Project.booking.exception.BookingFailedException;
+import com.example.Summit_Project.booking.exception.BookingNotFoundException;
 import com.example.Summit_Project.booking.repository.BookingRepository;
 import com.example.Summit_Project.booking.repository.RoomRepository;
 import com.example.Summit_Project.booking.security.AuthenticatedUser;
@@ -17,9 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BookingService {
@@ -56,7 +59,7 @@ public class BookingService {
             throw new BookingFailedException("Please try again!!");
         }
 
-        AppUser appUser = appUserRepository.findByUsername(authenticatedUser.username())
+        AppUser appUser = appUserRepository.findByEmail(authenticatedUser.email())
                 .orElseThrow(() -> new BookingFailedException("Please try again!!"));
 
         long totalNights = ChronoUnit.DAYS.between(request.checkInDate(), request.checkOutDate());
@@ -90,9 +93,36 @@ public class BookingService {
         );
     }
 
+    @Transactional
+    public BookingResponse cancelBooking(Long bookingId, AuthenticatedUser authenticatedUser) {
+        Booking booking = bookingRepository.findByIdAndUserEmail(bookingId, authenticatedUser.email())
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found: " + bookingId));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new BookingFailedException("Booking is already cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+
+        updateRoomAvailabilityAfterCancellation(booking.getRoom());
+
+        return new BookingResponse(
+                booking.getId(),
+                "Your booking for room " + booking.getRoom().getRoomLabel() + " has been cancelled",
+                booking.getHotel().getName(),
+                booking.getRoom().getRoomLabel(),
+                booking.getCheckInDate(),
+                booking.getCheckOutDate(),
+                booking.getTotalPrice(),
+                booking.getStatus(),
+                booking.getBookingDate()
+        );
+    }
+
     @Transactional(readOnly = true)
-    public List<UserBookingHistoryResponse> getUserBookingHistory(String username) {
-        return bookingRepository.findByUserUsernameOrderByBookingDateDesc(username).stream()
+    public List<UserBookingHistoryResponse> getUserBookingHistory(String email) {
+        return bookingRepository.findByUserEmailOrderByBookingDateDesc(email).stream()
                 .map(booking -> new UserBookingHistoryResponse(
                         booking.getId(),
                         booking.getHotel().getName(),
@@ -110,28 +140,36 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdminBookingView> getAllBookingsForAdmin() {
-        return bookingRepository.findAllByOrderByBookingDateDesc().stream()
-                .map(booking -> new AdminBookingView(
-                        booking.getId(),
-                        booking.getUser() != null ? booking.getUser().getUsername() : "legacy-user",
-                        booking.getHotel().getName(),
-                        booking.getHotel().getCity(),
-                        booking.getHotel().getState(),
-                        booking.getRoom().getRoomLabel(),
-                        booking.getRoom().getRoomType(),
-                        booking.getCheckInDate(),
-                        booking.getCheckOutDate(),
-                        booking.getTotalPrice(),
-                        booking.getStatus(),
-                        booking.getBookingDate()
-                ))
-                .toList();
+    public List<AdminBookingView> getAllBookingsForAdmin(
+            BookingStatus status,
+            LocalDate checkInDateFrom,
+            LocalDate checkOutDateTo
+    ) {
+        return bookingRepository.findAdminBookings(status, checkInDateFrom, checkOutDateTo);
     }
 
     private void validateBookingDates(BookingRequest request) {
         if (!request.checkOutDate().isAfter(request.checkInDate())) {
             throw new BookingFailedException("Please try again!!");
         }
+    }
+
+    private void updateRoomAvailabilityAfterCancellation(Room room) {
+        Optional<Booking> nextBooking = bookingRepository
+                .findFirstByRoomIdAndStatusAndCheckOutDateGreaterThanEqualOrderByCheckInDateAsc(
+                        room.getId(),
+                        BookingStatus.CONFIRMED,
+                        LocalDate.now()
+                );
+
+        if (nextBooking.isPresent()) {
+            room.setBooked(true);
+            room.setBookedDate(nextBooking.get().getCheckInDate());
+        } else {
+            room.setBooked(false);
+            room.setBookedDate(null);
+        }
+
+        roomRepository.save(room);
     }
 }

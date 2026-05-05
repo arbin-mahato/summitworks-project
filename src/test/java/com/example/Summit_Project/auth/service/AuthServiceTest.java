@@ -42,16 +42,17 @@ class AuthServiceTest {
     @Test
     void shouldAuthenticateValidUser() {
         AppUser appUser = new AppUser();
-        appUser.setUsername("user");
+        appUser.setFullName("Test User");
+        appUser.setEmail("user@example.com");
         appUser.setPasswordHash("encoded");
         appUser.setRole(Role.USER);
 
-        when(appUserRepository.findByUsername("user")).thenReturn(Optional.of(appUser));
+        when(appUserRepository.findByEmail("user@example.com")).thenReturn(Optional.of(appUser));
         when(passwordEncoder.matches("User@123", "encoded")).thenReturn(true);
         when(jwtService.generateToken(appUser)).thenReturn("jwt-token");
         when(jwtService.getExpiryTime()).thenReturn(java.time.Instant.parse("2030-01-01T00:00:00Z"));
 
-        var response = authService.authenticate(new AuthRequest("user", "User@123"));
+        var response = authService.authenticate(new AuthRequest("user@example.com", "User@123"));
 
         assertThat(response.token()).isEqualTo("jwt-token");
         assertThat(response.role()).isEqualTo(Role.USER);
@@ -60,63 +61,66 @@ class AuthServiceTest {
     @Test
     void shouldRejectInvalidPassword() {
         AppUser appUser = new AppUser();
-        appUser.setUsername("user");
+        appUser.setFullName("Test User");
+        appUser.setEmail("user@example.com");
         appUser.setPasswordHash("encoded");
 
-        when(appUserRepository.findByUsername("user")).thenReturn(Optional.of(appUser));
+        when(appUserRepository.findByEmail("user@example.com")).thenReturn(Optional.of(appUser));
         when(passwordEncoder.matches("wrong", "encoded")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.authenticate(new AuthRequest("user", "wrong")))
+        assertThatThrownBy(() -> authService.authenticate(new AuthRequest("user@example.com", "wrong")))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
     void shouldSignupNewUser() {
         AppUser savedUser = new AppUser();
-        savedUser.setUsername("Arbin");
+        savedUser.setFullName("Arbin");
+        savedUser.setEmail("arbin@example.com");
         savedUser.setPasswordHash("encoded");
         savedUser.setRole(Role.USER);
 
-        when(appUserRepository.existsByUsername("Arbin")).thenReturn(false);
+        when(appUserRepository.existsByEmail("arbin@example.com")).thenReturn(false);
         when(passwordEncoder.encode("abc123")).thenReturn("encoded");
         when(appUserRepository.save(any(AppUser.class))).thenReturn(savedUser);
         when(jwtService.generateToken(savedUser)).thenReturn("signup-token");
         when(jwtService.getExpiryTime()).thenReturn(java.time.Instant.parse("2030-01-01T00:00:00Z"));
 
-        var response = authService.signup(new SignupRequest("Arbin", "abc123"));
+        var response = authService.signup(new SignupRequest("Arbin", "arbin@example.com", "abc123"));
 
         assertThat(response.token()).isEqualTo("signup-token");
         assertThat(response.role()).isEqualTo(Role.USER);
     }
 
     @Test
-    void shouldRejectDuplicateUsernameOnSignup() {
-        when(appUserRepository.existsByUsername("user")).thenReturn(true);
+    void shouldRejectDuplicateEmailOnSignup() {
+        when(appUserRepository.existsByEmail("user@example.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.signup(new SignupRequest("user", "abc123")))
+        assertThatThrownBy(() -> authService.signup(new SignupRequest("User", "user@example.com", "abc123")))
                 .isInstanceOf(UserAlreadyExistsException.class);
     }
 
     @Test
     void shouldAssignAdminRoleToExistingUser() {
         AppUser appUser = new AppUser();
-        appUser.setUsername("Arbin");
+        appUser.setFullName("Arbin");
+        appUser.setEmail("arbin@example.com");
         appUser.setRole(Role.USER);
 
-        when(appUserRepository.findByUsername("Arbin")).thenReturn(Optional.of(appUser));
+        when(appUserRepository.findByEmail("arbin@example.com")).thenReturn(Optional.of(appUser));
         when(appUserRepository.save(appUser)).thenReturn(appUser);
 
-        var response = authService.assignRole("Arbin", new RoleAssignmentRequest(Role.ADMIN));
+        var response = authService.assignRole("arbin@example.com", new RoleAssignmentRequest(Role.ADMIN));
 
-        assertThat(response.username()).isEqualTo("Arbin");
+        assertThat(response.email()).isEqualTo("arbin@example.com");
         assertThat(response.role()).isEqualTo(Role.ADMIN);
     }
 
     @Test
     void shouldFailAssignRoleWhenUserMissing() {
-        when(appUserRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+        when(appUserRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.assignRole("ghost", new RoleAssignmentRequest(Role.ADMIN)))
+        assertThatThrownBy(() -> authService.assignRole("ghost@example.com", new RoleAssignmentRequest(Role.ADMIN)))
                 .isInstanceOf(UserNotFoundException.class);
     }
 }

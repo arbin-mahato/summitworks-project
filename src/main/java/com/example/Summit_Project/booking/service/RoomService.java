@@ -31,6 +31,20 @@ public class RoomService {
     }
 
     @Transactional(readOnly = true)
+    public List<RoomSummaryResponse> getRoomsByHotel(Long hotelId) {
+        return roomRepository.findByHotelIdAndStateIgnoreCaseOrderByIdAsc(hotelId, ACTIVE).stream()
+                .map(room -> new RoomSummaryResponse(
+                        room.getId(),
+                        room.getRoomLabel(),
+                        room.getRoomType(),
+                        room.getPrice(),
+                        splitFeatures(room.getFeatures()),
+                        true
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<RoomSummaryResponse> getAvailableRoomsByHotel(Long hotelId, LocalDate checkInDate, LocalDate checkOutDate) {
         validateDateRange(checkInDate, checkOutDate);
 

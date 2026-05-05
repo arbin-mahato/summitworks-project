@@ -22,6 +22,11 @@ public class BookingGlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Booking failed", List.of(exception.getMessage()));
     }
 
+    @ExceptionHandler(BookingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBookingNotFound(BookingNotFoundException exception) {
+        return buildResponse(HttpStatus.NOT_FOUND, "Booking not found", List.of(exception.getMessage()));
+    }
+
     @ExceptionHandler(AdminOperationException.class)
     public ResponseEntity<ErrorResponse> handleAdminOperationFailed(AdminOperationException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, "Admin operation failed", List.of(exception.getMessage()));

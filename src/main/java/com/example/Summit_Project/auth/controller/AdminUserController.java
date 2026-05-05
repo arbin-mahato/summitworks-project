@@ -23,11 +23,11 @@ public class AdminUserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{username}/role")
+    @PatchMapping("/{email}/role")
     public ResponseEntity<UserRoleResponse> assignRole(
-            @PathVariable String username,
+            @PathVariable String email,
             @Valid @RequestBody RoleAssignmentRequest request
     ) {
-        return ResponseEntity.ok(authService.assignRole(username, request));
+        return ResponseEntity.ok(authService.assignRole(email, request));
     }
 }

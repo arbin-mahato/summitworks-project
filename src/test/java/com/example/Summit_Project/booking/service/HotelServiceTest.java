@@ -158,6 +158,24 @@ class HotelServiceTest {
         assertThat(response.calendar().get(2).availableRooms()).isEqualTo(2);
     }
 
+    @Test
+    void shouldReturnDistinctStates() {
+        when(hotelRepository.findDistinctStates()).thenReturn(List.of("Delhi", "Goa"));
+
+        List<String> response = hotelService.getStates();
+
+        assertThat(response).containsExactly("Delhi", "Goa");
+    }
+
+    @Test
+    void shouldReturnDistinctCitiesFilteredByState() {
+        when(hotelRepository.findDistinctCitiesByState("Goa")).thenReturn(List.of("Calangute", "Panaji"));
+
+        List<String> response = hotelService.getCities("Goa");
+
+        assertThat(response).containsExactly("Calangute", "Panaji");
+    }
+
     private Room buildRoom(Long id, Hotel hotel, String roomLabel, String state, String price) {
         Room room = new Room();
         room.setId(id);

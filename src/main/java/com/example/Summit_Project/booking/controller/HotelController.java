@@ -38,6 +38,18 @@ public class HotelController {
         return ResponseEntity.ok(hotelService.getHotels(state, city, startDate, days));
     }
 
+    @GetMapping("/states")
+    public ResponseEntity<List<String>> getStates() {
+        return ResponseEntity.ok(hotelService.getStates());
+    }
+
+    @GetMapping("/cities")
+    public ResponseEntity<List<String>> getCities(
+            @RequestParam(required = false) String state
+    ) {
+        return ResponseEntity.ok(hotelService.getCities(state));
+    }
+
     @GetMapping("/{hotelId}/calendar")
     public ResponseEntity<HotelCalendarResponse> getHotelCalendar(
             @PathVariable Long hotelId,

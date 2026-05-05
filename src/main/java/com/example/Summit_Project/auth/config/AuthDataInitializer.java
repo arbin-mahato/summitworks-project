@@ -16,24 +16,26 @@ public class AuthDataInitializer {
     @Bean
     CommandLineRunner seedUsers(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            createUserIfMissing(appUserRepository, passwordEncoder, "admin", "Admin@123", Role.ADMIN);
-            createUserIfMissing(appUserRepository, passwordEncoder, "user", "User@123", Role.USER);
+            createUserIfMissing(appUserRepository, passwordEncoder, "System Admin", "admin@example.com", "Admin@123", Role.ADMIN);
+            createUserIfMissing(appUserRepository, passwordEncoder, "Default User", "user@example.com", "User@123", Role.USER);
         };
     }
 
     private void createUserIfMissing(
             AppUserRepository appUserRepository,
             PasswordEncoder passwordEncoder,
-            String username,
+            String fullName,
+            String email,
             String rawPassword,
             Role role
     ) {
-        if (appUserRepository.existsByUsername(username)) {
+        if (appUserRepository.existsByEmail(email)) {
             return;
         }
 
         AppUser appUser = new AppUser();
-        appUser.setUsername(username);
+        appUser.setFullName(fullName);
+        appUser.setEmail(email);
         appUser.setPasswordHash(passwordEncoder.encode(rawPassword));
         appUser.setRole(role);
         appUserRepository.save(appUser);

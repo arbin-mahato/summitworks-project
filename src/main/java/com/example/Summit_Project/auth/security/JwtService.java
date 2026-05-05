@@ -28,7 +28,7 @@ public class JwtService {
         Instant expiry = now.plus(jwtProperties.expirationMinutes(), ChronoUnit.MINUTES);
 
         return Jwts.builder()
-                .subject(appUser.getUsername())
+                .subject(appUser.getEmail())
                 .issuer(jwtProperties.issuer())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))

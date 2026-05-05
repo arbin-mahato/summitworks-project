@@ -61,6 +61,17 @@ public class HotelService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public List<String> getStates() {
+        return hotelRepository.findDistinctStates();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getCities(String state) {
+        String normalizedState = state != null && !state.isBlank() ? state.trim() : null;
+        return hotelRepository.findDistinctCitiesByState(normalizedState);
+    }
+
     private List<Hotel> loadHotels(String state, String city) {
         boolean hasState = state != null && !state.isBlank();
         boolean hasCity = city != null && !city.isBlank();

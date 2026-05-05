@@ -1,64 +1,34 @@
 spring:
   application:
     name: Summit_Project
-  profiles:
-    default: local
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+
   flyway:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:8080}
 
 app:
   jwt:
-    # Provide via environment variables, a local .env loader, or a secret manager.
     secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:15}
     issuer: ${JWT_ISSUER:summit-auth-service}
+
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200}
-
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  datasource:
-    # Local development defaults to localhost; credentials must come from env vars.
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-
----
-spring:
-  config:
-    activate:
-      on-profile: neon
-  datasource:
-    # Neon credentials should come from environment variables or your deployment secret manager.
-    url: ${NEON_DB_URL}
-    username: ${NEON_DB_USERNAME}
-    password: ${NEON_DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-
----
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    # Production values should come from the platform secret store, not from source control.
-    url: ${PROD_DB_URL}
-    username: ${PROD_DB_USERNAME}
-    password: ${PROD_DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}

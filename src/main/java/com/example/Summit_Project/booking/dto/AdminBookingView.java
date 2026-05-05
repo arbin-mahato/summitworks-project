@@ -8,12 +8,9 @@ import java.time.OffsetDateTime;
 
 public record AdminBookingView(
         Long bookingId,
-        String username,
+        String userName,
         String hotelName,
-        String city,
-        String state,
         String roomLabel,
-        String roomType,
         LocalDate checkInDate,
         LocalDate checkOutDate,
         BigDecimal totalPrice,

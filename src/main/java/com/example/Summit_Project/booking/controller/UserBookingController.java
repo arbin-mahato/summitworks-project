@@ -25,6 +25,6 @@ public class UserBookingController {
     public ResponseEntity<List<UserBookingHistoryResponse>> getMyBookings(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        return ResponseEntity.ok(bookingService.getUserBookingHistory(authenticatedUser.username()));
+        return ResponseEntity.ok(bookingService.getUserBookingHistory(authenticatedUser.email()));
     }
 }

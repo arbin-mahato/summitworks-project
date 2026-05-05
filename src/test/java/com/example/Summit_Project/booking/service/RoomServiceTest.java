@@ -39,6 +39,30 @@ class RoomServiceTest {
     private RoomService roomService;
 
     @Test
+    void shouldListAllRoomsForHotelWithoutDateFilter() {
+        Hotel hotel = new Hotel();
+        hotel.setId(1L);
+
+        Room room = new Room();
+        room.setId(2L);
+        room.setHotel(hotel);
+        room.setRoomLabel("GS-102");
+        room.setRoomType("Twin Deluxe");
+        room.setState("ACTIVE");
+        room.setFeatures("WiFi,Work Desk");
+        room.setPrice(new BigDecimal("149.99"));
+
+        when(roomRepository.findByHotelIdAndStateIgnoreCaseOrderByIdAsc(1L, "ACTIVE")).thenReturn(List.of(room));
+
+        List<RoomSummaryResponse> response = roomService.getRoomsByHotel(1L);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).roomId()).isEqualTo(2L);
+        assertThat(response.get(0).roomLabel()).isEqualTo("GS-102");
+        assertThat(response.get(0).available()).isTrue();
+    }
+
+    @Test
     void shouldMarkBookedRoomUnavailableForRequestedDateRange() {
         Hotel hotel = new Hotel();
         hotel.setId(1L);
