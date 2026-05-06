@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
 
                         .requestMatchers("/api/v1/admin/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/hotels").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/hotels").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/hotels/*/calendar").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/hotels/*/rooms").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/rooms/*").hasAnyRole("USER", "ADMIN")
