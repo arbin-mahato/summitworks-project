@@ -72,10 +72,10 @@ public class SecurityConfig {
                         .hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/bookings")
-                        .hasRole("USER")
+                        .hasAnyRole("USER","ADMIN")
 
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/bookings/*")
-                        .hasRole("USER")
+                        .hasAnyRole("USER","ADMIN")
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me/bookings")
                         .hasAnyRole("USER", "ADMIN")
