@@ -28,35 +28,74 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsProperties corsProperties;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, CorsProperties corsProperties) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          CorsProperties corsProperties) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.corsProperties = corsProperties;
     }
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
                 .csrf(AbstractHttpConfigurer::disable)
+
                 .cors(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
                 .authorizeHttpRequests(auth -> auth
+
+                        // Public Auth APIs
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/signup").permitAll()
+
+                        // Allow HEAD requests for UptimeRobot
+                        .requestMatchers(HttpMethod.HEAD, "/**").permitAll()
+
+                        // Actuator
                         .requestMatchers("/actuator/**").permitAll()
 
-                        .requestMatchers("/api/v1/admin/users/**").hasRole("ADMIN")
+                        // Public Hotel APIs
                         .requestMatchers(HttpMethod.GET, "/api/v1/hotels").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/hotels/*/calendar").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/hotels/*/rooms").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/rooms/*").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/bookings").hasRole("USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bookings/*").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/me/bookings").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                        // User/Admin APIs
+                        .requestMatchers(HttpMethod.GET, "/api/v1/hotels/*/calendar")
+                        .hasAnyRole("USER", "ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/hotels/*/rooms")
+                        .hasAnyRole("USER", "ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/rooms/*")
+                        .hasAnyRole("USER", "ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bookings")
+                        .hasRole("USER")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bookings/*")
+                        .hasRole("USER")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/me/bookings")
+                        .hasAnyRole("USER", "ADMIN")
+
+                        // Admin APIs
+                        .requestMatchers("/api/v1/admin/users/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasRole("ADMIN")
+
+                        // Everything else
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                .addFilterBefore(jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class)
+
                 .httpBasic(AbstractHttpConfigurer::disable)
+
                 .formLogin(AbstractHttpConfigurer::disable);
 
         return http.build();
@@ -69,14 +108,24 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
+
         configuration.setAllowedOrigins(corsProperties.allowedOrigins());
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        configuration.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
+        );
+
         configuration.setAllowedHeaders(List.of("*"));
+
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }
